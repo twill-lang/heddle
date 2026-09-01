@@ -5,12 +5,14 @@ suites on any machine and the eighth on some of them: `tests/nuts_test.tw` is
 27/27 on linux/amd64 and 26/27 on arm64, where the half-normal posterior mean
 comes back 0.8299 against a tolerance of 0.7979 ± 0.03. That is not a heddle
 defect and not a twill one. Go's `math.Exp` differs by one ULP between the two
-architectures, a seeded NUTS run amplifies it — one trajectory diverges early
-and the sampler takes a different path — and the answer moves by a thousand
+architectures, a seeded NUTS run amplifies it: one trajectory diverges early
+and the sampler takes a different path, and the answer moves by a thousand
 times the input difference. Measured on 2026-09-01 and written up in twill's
 `docs/CORRECTNESS.md` section 4. **A test that pins a number produced by an
 iterative float method pins the architecture it was written on**, and the
-tolerance to fix this one is heddle's decision, not a language change. This file started as the reason it did not: the language and
+tolerance to fix this one is heddle's decision, not a language change.
+
+This file started as the reason none of it ran: the language and
 runtime features the source uses that twill did not provide, with the file and
 function that needs each one, and what heddle did in the meantime.
 
@@ -484,7 +486,7 @@ Softplus is smooth, so this is the rewrite importing a non-differentiable point
 into a function that does not have one. It is one input out of the reals and the
 sampler's chance of landing on exactly 0.0 is negligible, but a language whose
 whole claim is that `grad` is built in should decide that deliberately rather
-than discover it. The alternatives — a `where` threshold, or a `log1p` builtin —
+than discover it. The alternatives, a `where` threshold or a `log1p` builtin,
 each cost something else: `where` evaluates both branches, so the overflowing
 one poisons the gradient with a NaN even when its value is discarded, and
 `log1p` is a new builtin rather than a change to a standard-library line.
@@ -516,14 +518,14 @@ second and to estimate the remaining time
 **Status: delivered, and this entry was wrong about it.** `mono_ns()` returns a
 monotonic nanosecond count and `clock_now_ms()` a wall-clock millisecond one;
 both were checked against the binary on 2026-09-01, and `mono_ns` has been in
-the language since 1.6.0-rc1 — before the release this entry says it is missing
+the language since 1.6.0-rc1, before the release this entry says it is missing
 from. loom's entry 16, which this one calls a duplicate, has said "DELIVERED in
 twill 1.7" the whole time, so the two cross-referenced each other and
 disagreed.
 
 What remains is heddle's, not the language's: `run_chain` reports nothing while
 it runs. The number this entry argues for is the ratio of gradient evaluations
-to draws rather than elapsed time, and heddle already counts the evaluations —
+to draws rather than elapsed time, and heddle already counts the evaluations,
 so what is missing is where the line is printed and how often, which is an
 output-format decision and not a clock.
 

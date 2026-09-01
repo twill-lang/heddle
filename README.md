@@ -27,7 +27,7 @@ the 8 test suites under `tests/` pass, and CI runs them against a released
 twill on every push rather than gating on the prose in this file.
 
 **Seven of the eight pass anywhere; the eighth passes where CI runs it.**
-`tests/nuts_test.tw` is 27/27 on linux/amd64 — which is what CI is — and 26/27
+`tests/nuts_test.tw` is 27/27 on linux/amd64 (which is what CI is) and 26/27
 on arm64, where the half-normal posterior mean comes back 0.8299 against a
 tolerance of 0.7979 ± 0.03. Go's `math.Exp` differs by one ULP between the two
 architectures and a seeded NUTS run amplifies it: one trajectory diverges early,
@@ -73,7 +73,7 @@ selects a suite rather than a set. Explicit paths are the way to name a set.
 Nothing here is optimised and nothing here is parallel. `src/nuts.tw`'s
 `run_chains` runs its chains one after another because twill has no way to run
 them at once, which is `docs/needs.md` entry 26 and the largest performance item
-in this repository. There is also no progress output, which is entry 25 — and
+in this repository. There is also no progress output, which is entry 25, and
 that entry used to blame the language for having no clock. It has one, and has
 had since 1.6.0-rc1; what is missing is heddle deciding what to print and how
 often.
@@ -173,7 +173,7 @@ not finish quickly. I ran `twill run examples/eight_schools.tw` under twill
 1.7.1 on Windows 11 and killed it at a 180 second timeout, still running. I did
 not measure how long it actually takes, so I will not put a number on it. It is
 not hung; it is a NUTS run with no progress output, which is `docs/needs.md`
-entry 25 — heddle's own gap rather than a missing clock. heddle's CI checks this file and does not run it, on purpose.
+entry 25: heddle's own gap rather than a missing clock. heddle's CI checks this file and does not run it, on purpose.
 
 The transcript below is illustrative and is **not** captured output. I have not
 run this example to completion, so the figures in it are what the summary table
