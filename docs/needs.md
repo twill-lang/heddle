@@ -1,7 +1,18 @@
 # What heddle needs from twill
 
-heddle is written in twill and it runs. `twill test tests` passes all 8 suites
-under twill 1.7.1. This file started as the reason it did not: the language and
+heddle is written in twill and it runs. `twill test tests` passes 7 of its 8
+suites on any machine and the eighth on some of them: `tests/nuts_test.tw` is
+27/27 on linux/amd64 and 26/27 on arm64, where the half-normal posterior mean
+comes back 0.8299 against a tolerance of 0.7979 ± 0.03. That is not a heddle
+defect and not a twill one. Go's `math.Exp` differs by one ULP between the two
+architectures, a seeded NUTS run amplifies it: one trajectory diverges early
+and the sampler takes a different path, and the answer moves by a thousand
+times the input difference. Measured on 2026-09-01 and written up in twill's
+`docs/CORRECTNESS.md` section 4. **A test that pins a number produced by an
+iterative float method pins the architecture it was written on**, and the
+tolerance to fix this one is heddle's decision, not a language change.
+
+This file started as the reason none of it ran: the language and
 runtime features the source uses that twill did not provide, with the file and
 function that needs each one, and what heddle did in the meantime.
 
@@ -453,9 +464,34 @@ Both ends are reached by a real sampler: an unconstrained scale wanders to
 plus or minus 40 routinely during warmup, and an infinity in a Jacobian term
 poisons the whole trajectory and shows up as a divergence with no cause.
 
-heddle carries its own. Changing the one in `std/nn.tw` is a strict improvement
-with no behaviour change for any argument where the current one is finite, so
-this is a correction rather than an addition.
+heddle carries its own. Changing the one in `std/nn.tw` is still worth doing,
+but the last sentence of this entry used to say it was "a strict improvement
+with no behaviour change for any argument where the current one is finite", and
+that is not true. Measured against the twill binary on 2026-09-01:
+
+| x | `log(1 + exp(x))` | `maximum(x,0) + log(1 + exp(-abs(x)))` |
+| --- | --- | --- |
+| 800 | `+Inf` | 800 |
+| 30 | 30 | 30 |
+| 0 | 0.693147 | 0.693147 |
+| **grad at 0** | **0.5** | **1** |
+
+The values agree everywhere the current one is finite. The **gradient at exactly
+zero does not**, because the rewrite is a sum of two kinked terms whose kinks
+cancel everywhere except at the kink itself: `grad(maximum(x,0))` is 1 at zero
+and `grad(abs(x))` is 0, so the two subgradient conventions add to 1 where the
+true derivative is `sigmoid(0) = 0.5`.
+
+Softplus is smooth, so this is the rewrite importing a non-differentiable point
+into a function that does not have one. It is one input out of the reals and the
+sampler's chance of landing on exactly 0.0 is negligible, but a language whose
+whole claim is that `grad` is built in should decide that deliberately rather
+than discover it. The alternatives, a `where` threshold or a `log1p` builtin,
+each cost something else: `where` evaluates both branches, so the overflowing
+one poisons the gradient with a NaN even when its value is discarded, and
+`log1p` is a new builtin rather than a change to a standard-library line.
+
+Still open, and now open on a decision rather than on nobody having written it.
 
 ### 24. A test runner
 
@@ -479,9 +515,19 @@ someone adds it to the workflow by hand.
 **Needs:** a monotonic millisecond clock
 **Used by:** would be used by `src/nuts.tw` (`run_chain`) to report draws per
 second and to estimate the remaining time
-**Status:** still open as of twill 1.7.1. The builtin set has the memory
-counters, the filesystem and path calls, `env` and `args`, and no clock of any
-kind. Duplicates twill NEEDS-39, and loom's entry 16.
+**Status: delivered, and this entry was wrong about it.** `mono_ns()` returns a
+monotonic nanosecond count and `clock_now_ms()` a wall-clock millisecond one;
+both were checked against the binary on 2026-09-01, and `mono_ns` has been in
+the language since 1.6.0-rc1, before the release this entry says it is missing
+from. loom's entry 16, which this one calls a duplicate, has said "DELIVERED in
+twill 1.7" the whole time, so the two cross-referenced each other and
+disagreed.
+
+What remains is heddle's, not the language's: `run_chain` reports nothing while
+it runs. The number this entry argues for is the ratio of gradient evaluations
+to draws rather than elapsed time, and heddle already counts the evaluations,
+so what is missing is where the line is printed and how often, which is an
+output-format decision and not a clock.
 
 A NUTS run takes minutes to hours and reports nothing while it runs. The useful
 number is not elapsed time but the ratio of gradient evaluations to draws, which
