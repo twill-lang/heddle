@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/diag.tw" as diag
 import "../src/chain.tw" as chain
 

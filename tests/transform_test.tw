@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/transform.tw" as tr
 
 # THE TEST THAT MATTERS IN THIS FILE
@@ -77,22 +77,22 @@ fn the_interval_jacobian_carries_the_width_factor() {
 # The centring offset. Without it, x = 0 maps to (1/2, 1/4, 1/8, 1/8) for K = 4,
 # which is a strong opinion disguised as an uninformative start.
 fn stick_breaking_maps_zero_to_the_uniform_point() {
-  let s = tr.simplex([0.0, 0.0, 0.0], 4)
+  let (s, _) = tr.simplex([0.0, 0.0, 0.0], 4)
   let i: I64 = 0
   while i < 4 {
     t.near("component " + str(i) + " of the centred simplex point",
-      item(s.y[i]), 0.25, 0.0000000001)
+      item(s[i]), 0.25, 0.0000000001)
     i = i + 1
   }
 }
 
 fn a_stick_breaking_point_lies_on_the_simplex() {
-  let s = tr.simplex([1.4, -2.0, 0.3], 4)
+  let (s, _) = tr.simplex([1.4, -2.0, 0.3], 4)
   let total: F64 = 0.0
   let i: I64 = 0
   while i < 4 {
-    t.check("every simplex component is positive", item(s.y[i]) > 0.0)
-    total = total + item(s.y[i])
+    t.check("every simplex component is positive", item(s[i]) > 0.0)
+    total = total + item(s[i])
     i = i + 1
   }
   t.near("the simplex point sums to one", total, 1.0, 0.0000000001)
@@ -100,7 +100,7 @@ fn a_stick_breaking_point_lies_on_the_simplex() {
 
 fn stick_breaking_round_trips_through_its_inverse() {
   let x: Tensor = [0.7, -1.1, 0.2]
-  let y: Tensor = tr.simplex(x, 4).y
+  let (y, _) = tr.simplex(x, 4)
   let back: Tensor = tr.simplex_inverse(y, 4)
   let i: I64 = 0
   while i < 3 {
@@ -127,22 +127,24 @@ fn the_stick_breaking_jacobian_includes_the_remaining_stick() {
     let minus: Arr[F64] = [x[0], x[1], x[2]]
     plus[k] = plus[k] + H
     minus[k] = minus[k] - H
-    let dy: F64 = item(tr.simplex(tensor(plus), 4).y[k])
-      - item(tr.simplex(tensor(minus), 4).y[k])
+    let (y_plus, _) = tr.simplex(tensor(plus), 4)
+    let (y_minus, _) = tr.simplex(tensor(minus), 4)
+    let dy: F64 = item(y_plus[k]) - item(y_minus[k])
     product = product * (dy / (2.0 * H))
     k = k + 1
   }
 
-  let claimed: F64 = f64_exp(item(tr.simplex(tensor(x), 4).log_jac))
+  let (_, log_jac) = tr.simplex(tensor(x), 4)
+  let claimed: F64 = f64_exp(item(log_jac))
   t.near("stick breaking log determinant", claimed, product, 0.000001)
 }
 
 fn an_ordered_vector_is_increasing() {
-  let o = tr.ordered([1.0, -3.0, 0.5, 2.0], 4)
+  let (o, _) = tr.ordered([1.0, -3.0, 0.5, 2.0], 4)
   let i: I64 = 1
   while i < 4 {
     t.check("ordered element " + str(i) + " exceeds its predecessor",
-      item(o.y[i]) > item(o.y[i - 1]))
+      item(o[i]) > item(o[i - 1]))
     i = i + 1
   }
 }
@@ -150,13 +152,15 @@ fn an_ordered_vector_is_increasing() {
 fn the_ordered_jacobian_ignores_the_first_coordinate() {
   # dy_1/dx_1 = 1 contributes nothing, and dy_k/dx_k = exp(x_k) for k > 1.
   let x: Tensor = [1.0, -3.0, 0.5]
-  let claimed: F64 = item(tr.ordered(x, 3).log_jac)
+  let (_, log_jac) = tr.ordered(x, 3)
+  let claimed: F64 = item(log_jac)
   t.near("ordered log determinant is the sum of x_2..x_n", claimed, -3.0 + 0.5, 0.0000000001)
 }
 
 fn an_ordered_vector_round_trips() {
   let x: Tensor = [0.4, -1.0, 2.2]
-  let back: Tensor = tr.ordered_inverse(tr.ordered(x, 3).y, 3)
+  let (y, _) = tr.ordered(x, 3)
+  let back: Tensor = tr.ordered_inverse(y, 3)
   let i: I64 = 0
   while i < 3 {
     t.near("ordered inverse coordinate " + str(i), item(back[i]), item(x[i]), 0.0000001)
@@ -166,19 +170,19 @@ fn an_ordered_vector_round_trips() {
 
 fn a_cholesky_factor_is_lower_triangular_with_a_positive_diagonal() {
   # n = 3: three diagonal entries then three strictly lower ones.
-  let c = tr.chol_factor([0.1, -0.5, 0.3, 1.0, 2.0, 3.0], 3)
-  t.near("L[0][1] is zero", item(c.l[0][1]), 0.0, 0.0)
-  t.near("L[0][2] is zero", item(c.l[0][2]), 0.0, 0.0)
-  t.near("L[1][2] is zero", item(c.l[1][2]), 0.0, 0.0)
-  t.near("L[0][0] is exp of the first coordinate", item(c.l[0][0]), f64_exp(0.1), 0.0000000001)
-  t.near("L[1][1] is exp of the second", item(c.l[1][1]), f64_exp(-0.5), 0.0000000001)
-  t.near("L[1][0] is the first off-diagonal", item(c.l[1][0]), 1.0, 0.0000000001)
-  t.check("the diagonal is positive", item(c.l[2][2]) > 0.0)
+  let (l, _) = tr.chol_factor([0.1, -0.5, 0.3, 1.0, 2.0, 3.0], 3)
+  t.near("L[0][1] is zero", item(l[0][1]), 0.0, 0.0)
+  t.near("L[0][2] is zero", item(l[0][2]), 0.0, 0.0)
+  t.near("L[1][2] is zero", item(l[1][2]), 0.0, 0.0)
+  t.near("L[0][0] is exp of the first coordinate", item(l[0][0]), f64_exp(0.1), 0.0000000001)
+  t.near("L[1][1] is exp of the second", item(l[1][1]), f64_exp(-0.5), 0.0000000001)
+  t.near("L[1][0] is the first off-diagonal", item(l[1][0]), 1.0, 0.0000000001)
+  t.check("the diagonal is positive", item(l[2][2]) > 0.0)
 }
 
 fn the_cholesky_jacobian_is_the_sum_of_the_diagonal_coordinates() {
-  let c = tr.chol_factor([0.1, -0.5, 0.3, 1.0, 2.0, 3.0], 3)
-  t.near("chol log determinant", item(c.log_jac), 0.1 - 0.5 + 0.3, 0.0000000001)
+  let (_, log_jac) = tr.chol_factor([0.1, -0.5, 0.3, 1.0, 2.0, 3.0], 3)
+  t.near("chol log determinant", item(log_jac), 0.1 - 0.5 + 0.3, 0.0000000001)
 }
 
 fn the_cholesky_size_counts_the_free_entries() {

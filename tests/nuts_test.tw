@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/nuts.tw" as nuts
 import "../src/rwm.tw" as rwm
 import "../src/chain.tw" as chain
