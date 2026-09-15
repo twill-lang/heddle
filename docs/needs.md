@@ -219,9 +219,18 @@ student t are correct.
 
 ### 9. Recursion, and a depth that reaches 10
 
-**Delivered.** `src/nuts.tw`'s `build_tree` recurses and `tests/nuts_test.tw`
-passes, so the depth reaches at least `max_depth`. The recursive formulation
-was kept.
+**Delivered, and now the number is stated.** `src/nuts.tw`'s `build_tree`
+recurses and `tests/nuts_test.tw` passes, so the depth reaches at least
+`max_depth`. The recursive formulation was kept.
+
+twill 1.12 set the limit: a call nested more than 10,000 deep is refused with
+a twill error that names the function and the line, where before it was a Go
+stack overflow with neither. Eleven frames is three orders of magnitude under
+it. The twill changelog is worth reading on what the limit does not promise:
+it is a diagnostic and not a guarantee, and a runaway call nested inside deep
+enough expression nesting can still overflow the host before the counter
+reaches 10,000. `build_tree` is not that shape, and the depth it reaches is
+bounded by `max_depth` rather than by a missing base case.
 
 **Used by:** `src/nuts.tw` (`build_tree` calls itself), `src/dist.tw`
 (`gamma_sample` calls itself once for the shape-below-one boost)
@@ -345,9 +354,10 @@ test file.
 
 ### 18. `exit(I64)`
 
-**Delivered.** Delivered, and `tests/harness.tw`'s `report` uses it, so a red
-suite fails CI. `twill test` also reports the failure count itself; see entry
-24.
+**Delivered.** Delivered, and used for a while by `tests/harness.tw`'s
+`report`, so a red suite failed CI. That file is gone: the suites report
+through `std/test`, whose `report` returns the status rather than raising it,
+and `twill test` reads the failure count off the summary line; see entry 24.
 
 **Used by:** `tests/harness.tw` (`report`)
 **Status:** duplicates twill NEEDS-28.
@@ -366,7 +376,15 @@ return a value and its Jacobian together), `src/hmc.tw` (`DrawResult`),
 (`LogDensity`)
 **Status:** the language half is done -- `Res[T, E]` and `Opt[T]` are checked
 types (twill 1.6) and twill 1.7 closed NEEDS-4, so a declaration here can take
-type parameters too. The adoption is heddle's and has not been done.
+type parameters too. Multiple return values arrived in twill 1.12 as tuples,
+and the three structs the correction below said they would remove are gone:
+`simplex`, `ordered` and `chol_factor` return `(Tensor, Tensor)`, the value
+and its log Jacobian in that order, and a caller writes
+`let (y, log_jac) = tr.simplex(x, k)`. `LogDensity` stays, as the correction
+said it should, and so do `DrawResult`, `Subtree` and `AdviResult`: a tuple
+holds parts a reader takes in order, and those have parts a reader wants by
+name. The error-convention half, `model.declare` returning a `Str`, is still
+heddle's to adopt.
 
 **One correction, because this entry asked for the wrong thing.** It says the
 two-value returns need generics. Three of the four do not: `Simplex`, `Ordered`
@@ -500,6 +518,16 @@ paths given, and it has a `--filter <substring>`. heddle's CI runs `./twill
 test tests` rather than a hand-maintained file list, so a new test file is
 picked up the moment it is added. That was the whole of the ask.
 
+The assertions came later, in twill 1.11, as `std/test`, and
+`tests/harness.tw` is deleted: every suite imports `std/test` as `t` with the
+same `check`, `equal_str`, `equal_i64`, `near` and `report` it called before.
+`near_grad` was heddle's own and lives in `tests/dist_test.tw`, the one suite
+that calls it, rather than in a shared helper, because a helper that imports
+`std/test` gets its own counter and a failure it recorded would never reach
+the suite's `report`. `report` prints its summary in the shape the runner
+reads, so `twill test` now shows the counts beside each file where the copy's
+`dist: 35 passed, 0 failed` gave it nothing to parse.
+
 **Needs:** a `twill test` that collects `tests/*_test.tw`
 **Used by:** everything in `tests/`
 **Status:** none. Duplicates twill NEEDS-80's neighbourhood, and the same gap
@@ -556,9 +584,24 @@ Not blocking, and the largest single performance item on this list.
 ### 27. Sorting an `Arr[F64]` from a shared place
 
 **Used by:** `src/diag.tw` (`sorted_copy`)
-**Status:** `std/stats.tw` has `sorted`, and using it would pull in that
-module's `SORT_CUTOFF` constant, tuned for a different case. Related to twill
-NEEDS-23, which asks for `Arr[Str]`.
+**Status: delivered in twill 1.9.0, and adopted.** `sort` is a builtin that
+returns a new array and has no cutoff constant to inherit, so `sorted_copy`
+is one line and the insertion sort below is gone.
+
+One thing found on the way, recorded rather than asked for. `sort(xs)` with
+no comparison refused the arrays `diag.tw` sorts, with "sort on a list orders
+strings and numbers; for anything else pass a comparison", and both
+`tests/diag_test.tw` and `tests/nuts_test.tw` went red on it. The elements are
+declared `Arr[F64]` and print as numbers, but each was read out of a tensor
+and is a rank-0 tensor at runtime, which `sort`'s own order does not count as
+a number. `sort(xs, fn(a, b) = a < b)` orders them, as the insertion sort's
+`>` always did, and that is what `sorted_copy` passes. The checker and the
+builtin disagree about what an `F64` is here, and the disagreement is silent
+until a builtin that inspects the value's kind meets one.
+
+*What the entry said while it was open:* `std/stats.tw` has `sorted`, and
+using it would pull in that module's `SORT_CUTOFF` constant, tuned for a
+different case. Related to twill NEEDS-23, which asks for `Arr[Str]`.
 
 heddle writes an insertion sort, which is correct and quadratic, on arrays of a
 few thousand elements, once per run. Acceptable and slightly embarrassing. A

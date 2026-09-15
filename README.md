@@ -40,7 +40,7 @@ measurement and twill's `docs/CORRECTNESS.md` section 4 has the ULP.
 twill test tests
 ```
 
-You need twill 1.7.0 or newer.
+You need twill 1.12.0 or newer.
 
 ### That command takes about sixteen minutes. It is not hung.
 
@@ -449,13 +449,13 @@ docs/needs.md       what the language asked for, and what arrived
 ## Getting started
 
 Get a twill. The releases carry a single static binary per platform, named
-`twill-v1.7.1-<os>-<arch>`, with assets `linux-amd64`, `linux-arm64`,
+`twill-v1.12.0-<os>-<arch>`, with assets `linux-amd64`, `linux-arm64`,
 `darwin-amd64`, `darwin-arm64` and `windows-amd64.exe`:
 
 ```bash
-curl -fsSL -o twill   https://github.com/twill-lang/twill/releases/download/v1.7.1/twill-v1.7.1-linux-amd64
+curl -fsSL -o twill   https://github.com/twill-lang/twill/releases/download/v1.12.0/twill-v1.12.0-linux-amd64
 chmod +x twill
-./twill --version        # Twill 1.7.1
+./twill --version        # Twill 1.12.0
 ```
 
 Then run the fast example. It is Bayesian logistic regression by Laplace

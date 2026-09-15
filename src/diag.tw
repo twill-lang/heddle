@@ -74,26 +74,17 @@ fn sd_of(xs: Arr[F64]) -> F64 = f64_sqrt(var_of(xs))
 
 # ---- quantiles --------------------------------------------------------------
 
-fn sorted_copy(xs: Arr[F64]) -> Arr[F64] {
-  let a: Arr[F64] = vec.copy(xs)
-  # Insertion sort. The arrays here are one coordinate of one chain, so a few
-  # thousand elements, and the summary is computed once per run. A quicksort
-  # would be faster and `std/stats.tw` has one; this is here so `diag.tw` has
-  # no dependency on that module's cutoff constant, which it would otherwise
-  # inherit for a case it was not tuned for.
-  let i: I64 = 1
-  while i < len(a) {
-    let v: F64 = a[i]
-    let j: I64 = i - 1
-    while j >= 0 and a[j] > v {
-      a[j + 1] = a[j]
-      j = j - 1
-    }
-    a[j + 1] = v
-    i = i + 1
-  }
-  a
-}
+# The builtin returns a new array and leaves `xs` as it was, which is what the
+# name promises. This was an insertion sort, kept so that `diag.tw` had no
+# dependency on `std/stats.tw` and its cutoff constant; twill 1.9's `sort` has
+# no constant to inherit.
+#
+# The comparison is passed on purpose. A draw's coordinate is read out of a
+# tensor, and what lands in the array prints as a number and is `F64` to the
+# checker but is a rank-0 tensor to `sort`, which refuses to order it on its
+# own ("sort on a list orders strings and numbers"). `<` orders it, as the
+# insertion sort's `>` always did.
+fn sorted_copy(xs: Arr[F64]) -> Arr[F64] = sort(xs, fn(a, b) = a < b)
 
 # Linear interpolation between order statistics, which is the definition most
 # statistical software uses and therefore the one whose numbers a reader can

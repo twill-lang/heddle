@@ -1,10 +1,20 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/model.tw" as model
 import "../src/adapt.tw" as adapt
 import "../src/vec.tw" as vec
 import "../src/dist.tw" as dist
+
+# An analytic derivative against a central difference. Local to this file
+# rather than in a shared helper: a helper that imports std/test gets its own
+# counter, and a failure it recorded would never reach this file's report. The
+# central difference is deliberate: with h = 1e-5 it agrees to about 1e-10
+# where a forward difference agrees to about 1e-5, which is not tight enough
+# to catch a wrong sign on a small term.
+fn near_grad(name: Str, analytic: F64, plus: F64, minus: F64, h: F64, tol: F64) {
+  t.near(name, analytic, (plus - minus) / (2.0 * h), tol)
+}
 
 # ---- the layout -------------------------------------------------------------
 
@@ -116,7 +126,7 @@ fn the_value_and_gradient_of_a_model_are_both_right() {
     let minus: Arr[F64] = vec.copy(q)
     plus[k] = plus[k] + h
     minus[k] = minus[k] - h
-    t.near_grad("gradient coordinate " + str(k), d.grad[k],
+    near_grad("gradient coordinate " + str(k), d.grad[k],
       model.log_density(logp, plus), model.log_density(logp, minus), h, 0.0000001)
     k = k + 1
   }

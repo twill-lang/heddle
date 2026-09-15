@@ -8,6 +8,32 @@ This entry used to say nothing here had executed, which is no longer true.
 `README.md`'s State table says which piece each suite covers, and which two
 pieces still have no test.
 
+Changed, on moving the pin from twill 1.7.1 to 1.12.0:
+
+- The three transforms that returned a value and its log Jacobian return a
+  tuple, `(Tensor, Tensor)`, and `Simplex`, `Ordered` and `CholFactor` are
+  gone. `docs/needs.md` entry 19 called them "tuples with names", the same two
+  fields declared three times because a function could return one value;
+  twill 1.12 returns two. A caller writes `let (y, log_jac) = tr.simplex(x, k)`
+  and cannot read a field that is not there. `DrawResult`, `Subtree`,
+  `AdviResult` and `LogDensity` stay, for the reason the entry gives: they have
+  more than two parts, or parts a reader wants by name.
+- The assertions are `std/test`. twill 1.11 ships the ones every satellite
+  harness copied by hand, so `tests/harness.tw` is deleted and every suite
+  imports `std/test` as `t`. `near_grad` was heddle's own and lives in
+  `tests/dist_test.tw`, the one suite that calls it. `report` returns the
+  status instead of calling `exit`, and prints its summary in the shape
+  `twill test` reads, so the runner shows the counts beside each file, where
+  before it showed none.
+- `diag.sorted_copy` is twill 1.9's `sort`, which returns a new array and
+  takes no cutoff constant. The insertion sort it replaces was kept to avoid
+  `std/stats.tw`'s constant, which is entry 27, now closed. The comparison is
+  passed, because a coordinate read out of a tensor is a rank-0 tensor at
+  runtime and `sort`'s own order refuses it; the entry records the finding.
+- The recursion limit heddle's entry 9 asked to have stated is stated: twill
+  1.12 refuses a call nested more than 10,000 deep with a twill error naming
+  the function, and NUTS at `max_depth` 10 uses eleven frames.
+
 Written:
 
 - A model as `fn(Tensor) -> Tensor`, with the gradient of the log posterior

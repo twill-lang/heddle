@@ -223,12 +223,11 @@ fn interval_log_jac(x: Tensor, a: F64, b: F64, n: I64) -> Tensor =
 # Jacobian is exactly the value used in the forward map. Recomputing it
 # separately is how the two drift apart under a later edit.
 
-struct Simplex {
-  y: Tensor,
-  log_jac: Tensor,
-}
-
-fn simplex(x: Tensor, k: I64) -> Simplex {
+# Returns the point and the log Jacobian, in that order. A tuple rather than a
+# struct: the two are wanted together at every call site and apart nowhere,
+# and the struct that used to carry them was the same two fields three times
+# over, once per transform below.
+fn simplex(x: Tensor, k: I64) -> (Tensor, Tensor) {
   let pieces: Arr[Tensor] = []
   let remaining: Tensor = scalar(1.0)
   let lj: Tensor = scalar(0.0)
@@ -253,7 +252,7 @@ fn simplex(x: Tensor, k: I64) -> Simplex {
   # K-1 unconstrained coordinates.
   push(pieces, reshape(remaining, 1))
 
-  Simplex { y: concat(pieces, 0), log_jac: lj }
+  (concat(pieces, 0), lj)
 }
 
 # The inverse, for placing an initial point or reporting a constrained draw.
@@ -290,12 +289,7 @@ fn simplex_inverse(y: Tensor, k: I64) -> Tensor {
 # The Jacobian is again triangular. dy_1/dx_1 = 1 contributes nothing, and
 # dy_k/dx_k = exp(x_k) contributes x_k, so log|det J| is the sum of x_2..x_n.
 
-struct Ordered {
-  y: Tensor,
-  log_jac: Tensor,
-}
-
-fn ordered(x: Tensor, n: I64) -> Ordered {
+fn ordered(x: Tensor, n: I64) -> (Tensor, Tensor) {
   let pieces: Arr[Tensor] = []
   let cur: Tensor = x[0]
   push(pieces, reshape(cur, 1))
@@ -309,7 +303,7 @@ fn ordered(x: Tensor, n: I64) -> Ordered {
     i = i + 1
   }
 
-  Ordered { y: concat(pieces, 0), log_jac: lj }
+  (concat(pieces, 0), lj)
 }
 
 fn ordered_inverse(y: Tensor, n: I64) -> Tensor {
@@ -343,12 +337,7 @@ fn ordered_inverse(y: Tensor, n: I64) -> Tensor {
 # is a function whose caller must do the slicing arithmetic, which is where the
 # off-by-one lives.
 
-struct CholFactor {
-  l: Tensor,
-  log_jac: Tensor,
-}
-
-fn chol_factor(x: Tensor, n: I64) -> CholFactor {
+fn chol_factor(x: Tensor, n: I64) -> (Tensor, Tensor) {
   let rows: Arr[Tensor] = []
   let off: I64 = n
 
@@ -371,7 +360,7 @@ fn chol_factor(x: Tensor, n: I64) -> CholFactor {
     i = i + 1
   }
 
-  CholFactor { l: concat(rows, 0), log_jac: sum(x[0:n]) }
+  (concat(rows, 0), sum(x[0:n]))
 }
 
 # The number of unconstrained coordinates a Cholesky factor of dimension n

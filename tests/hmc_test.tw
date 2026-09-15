@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/hmc.tw" as hmc
 import "../src/vec.tw" as vec
 import "../src/dist.tw" as dist

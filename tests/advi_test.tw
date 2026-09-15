@@ -1,6 +1,6 @@
 mode systems
 
-import "harness.tw" as t
+import "std/test" as t
 import "../src/advi.tw" as advi
 import "../src/dist.tw" as dist
 import "../src/vec.tw" as vec
