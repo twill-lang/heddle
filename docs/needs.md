@@ -585,8 +585,19 @@ Not blocking, and the largest single performance item on this list.
 
 **Used by:** `src/diag.tw` (`sorted_copy`)
 **Status: delivered in twill 1.9.0, and adopted.** `sort` is a builtin that
-returns a new array, orders `F64` values, and has no cutoff constant to
-inherit, so `sorted_copy` is one line and the insertion sort below is gone.
+returns a new array and has no cutoff constant to inherit, so `sorted_copy`
+is one line and the insertion sort below is gone.
+
+One thing found on the way, recorded rather than asked for. `sort(xs)` with
+no comparison refused the arrays `diag.tw` sorts, with "sort on a list orders
+strings and numbers; for anything else pass a comparison", and both
+`tests/diag_test.tw` and `tests/nuts_test.tw` went red on it. The elements are
+declared `Arr[F64]` and print as numbers, but each was read out of a tensor
+and is a rank-0 tensor at runtime, which `sort`'s own order does not count as
+a number. `sort(xs, fn(a, b) = a < b)` orders them, as the insertion sort's
+`>` always did, and that is what `sorted_copy` passes. The checker and the
+builtin disagree about what an `F64` is here, and the disagreement is silent
+until a builtin that inspects the value's kind meets one.
 
 *What the entry said while it was open:* `std/stats.tw` has `sorted`, and
 using it would pull in that module's `SORT_CUTOFF` constant, tuned for a

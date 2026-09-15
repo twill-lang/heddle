@@ -27,7 +27,9 @@ Changed, on moving the pin from twill 1.7.1 to 1.12.0:
   before it showed none.
 - `diag.sorted_copy` is twill 1.9's `sort`, which returns a new array and
   takes no cutoff constant. The insertion sort it replaces was kept to avoid
-  `std/stats.tw`'s constant, which is entry 27, now closed.
+  `std/stats.tw`'s constant, which is entry 27, now closed. The comparison is
+  passed, because a coordinate read out of a tensor is a rank-0 tensor at
+  runtime and `sort`'s own order refuses it; the entry records the finding.
 - The recursion limit heddle's entry 9 asked to have stated is stated: twill
   1.12 refuses a call nested more than 10,000 deep with a twill error naming
   the function, and NUTS at `max_depth` 10 uses eleven frames.

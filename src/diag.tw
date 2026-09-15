@@ -78,7 +78,13 @@ fn sd_of(xs: Arr[F64]) -> F64 = f64_sqrt(var_of(xs))
 # name promises. This was an insertion sort, kept so that `diag.tw` had no
 # dependency on `std/stats.tw` and its cutoff constant; twill 1.9's `sort` has
 # no constant to inherit.
-fn sorted_copy(xs: Arr[F64]) -> Arr[F64] = sort(xs)
+#
+# The comparison is passed on purpose. A draw's coordinate is read out of a
+# tensor, and what lands in the array prints as a number and is `F64` to the
+# checker but is a rank-0 tensor to `sort`, which refuses to order it on its
+# own ("sort on a list orders strings and numbers"). `<` orders it, as the
+# insertion sort's `>` always did.
+fn sorted_copy(xs: Arr[F64]) -> Arr[F64] = sort(xs, fn(a, b) = a < b)
 
 # Linear interpolation between order statistics, which is the definition most
 # statistical software uses and therefore the one whose numbers a reader can
