@@ -13,4 +13,4 @@ entry = "src/nuts.tw"
 # of a toolchain dependency, so it is declared as an ordinary git dependency:
 # the version is the thing that matters and vendoring the twill tree does no
 # harm.
-twill = { version = "^1.12.0", git = "https://github.com/twill-lang/twill" }
+twill = { version = "^1.13.0", git = "https://github.com/twill-lang/twill" }
