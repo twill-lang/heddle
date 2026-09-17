@@ -8,6 +8,13 @@ This entry used to say nothing here had executed, which is no longer true.
 `README.md`'s State table says which piece each suite covers, and which two
 pieces still have no test.
 
+Changed, on moving the pin from twill 1.12.0 to 1.13.0:
+
+- A pin-currency bump, not a behaviour change. `spool.toml`, the CI workflow
+  and the README's install line move from 1.12.0 to 1.13.0. The suites pass on
+  1.13.0, with the one documented arm64 tolerance difference in `nuts_test`
+  that `docs/needs.md` records and CI does not hit on linux.
+
 Changed, on moving the pin from twill 1.7.1 to 1.12.0:
 
 - The three transforms that returned a value and its log Jacobian return a
