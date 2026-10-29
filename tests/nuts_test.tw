@@ -213,6 +213,15 @@ fn a_positive_parameter_with_its_jacobian_recovers_the_prior() {
   # sigma ~ HalfNormal(1). Sampled as x with sigma = exp(x), so the density is
   # half_normal(exp(x)) + x. The mean of a half normal with scale 1 is
   # sqrt(2/pi) = 0.7978845608.
+  #
+  # The tolerance is four Monte Carlo standard errors. These 4000 draws have
+  # an effective sample size near 750 and an MCSE near 0.022, measured over
+  # six seeds whose means average 0.798. The old tolerance of 0.03 was under
+  # 1.5 MCSE, so a correct sampler failed it for roughly one seed in six. It
+  # failed on arm64 and not on amd64 only because `f64_exp` differs there by
+  # one ULP (docs/CORRECTNESS.md section 4 in twill), which sends the chain
+  # down a different path from the same seed. 0.09 still rejects the
+  # no-Jacobian posterior below, whose mean is under 0.7.
   let model = fn(q: Tensor) -> Tensor {
     let x: Tensor = q[0]
     dist.half_normal_log_prob(exp(x), scalar(1.0)) + tr.positive_log_jac(x)
@@ -227,7 +236,7 @@ fn a_positive_parameter_with_its_jacobian_recovers_the_prior() {
     i = i + 1
   }
   t.near("the half normal prior mean is recovered",
-    s / f64_of_i64(len(c.draws)), 0.7978845608028654, 0.03)
+    s / f64_of_i64(len(c.draws)), 0.7978845608028654, 0.09)
 }
 
 # And the negative control: the same model without the Jacobian gives a

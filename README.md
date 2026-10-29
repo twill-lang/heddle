@@ -40,7 +40,8 @@ measurement and twill's `docs/CORRECTNESS.md` section 4 has the ULP.
 twill test tests
 ```
 
-You need twill 1.19.0 or newer.
+You need twill 1.12.0 or newer. CI tests against 1.19.0, which is what
+`spool.toml` pins.
 
 ### That command takes about sixteen minutes. It is not hung.
 
