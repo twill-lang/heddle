@@ -8,6 +8,14 @@ This entry used to say nothing here had executed, which is no longer true.
 `README.md`'s State table says which piece each suite covers, and which two
 pieces still have no test.
 
+Changed, on moving the pin from twill 1.19.0 to 1.19.1:
+
+- **Take twill 1.19.1.** twill 1.19.1 is released, so the pin follows it.
+  `spool.toml`, CI and the README install line move from 1.19.0 to 1.19.1. This
+  is a currency bump: no source or test changed, and the eight suites pass
+  unchanged on 1.19.1. 1.19.1 fixes `tensor()` on an `Arr[I64]` filled from
+  typed variables (twill-lang/twill#73).
+
 Changed, on moving the pin from twill 1.12.0 to 1.13.0:
 
 - A pin-currency bump, not a behaviour change. `spool.toml`, the CI workflow
